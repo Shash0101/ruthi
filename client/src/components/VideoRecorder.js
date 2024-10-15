@@ -17,6 +17,22 @@ const VideoRecorder = ({ questionId, jobId, userId, onTimerActiveChange }) => {
   const [recordingTime, setRecordingTime] = useState(150); // 2 mins 30 seconds for recording
   const [timerActive, setTimerActive] = useState(true);
   const [showRecordingIcon, setShowRecordingIcon] = useState(false);
+  const [azureService, setAzureService] = useState(false); // State to hold azureService status
+
+ // Fetch configuration including azureService status
+ useEffect(() => {
+  const fetchConfig = async () => {
+    try {
+      const config = yaml.load(fs.readFileSync('config/dev.config.yaml', 'utf8'));
+      setAzureService(config.azureService || false);
+    } catch (error) {
+      setAzureService(false);
+      console.error("Error fetching configuration:", error);
+    }
+  };
+
+  fetchConfig();
+}, []);
 
   // Effect to notify parent component of timerActive changes
   useEffect(() => {
@@ -145,11 +161,14 @@ const VideoRecorder = ({ questionId, jobId, userId, onTimerActiveChange }) => {
   useEffect(() => {
     if (!capturing && recordedChunks.length > 0) {
       const blob = new Blob(recordedChunks, { type: "video/webm" });
-      // uploadToAzure(blob);
-      uploadVideo(blob);
+      if (azureService) {
+        uploadToAzure(blob); // Call Azure upload if service is enabled
+      } else {
+        uploadVideo(blob); // Otherwise, call standard video upload
+      }
       setRecordedChunks([]);
     }
-  }, [recordedChunks, capturing]);
+  }, [recordedChunks, capturing, azureService]);
 
   useEffect(() => {
     if (timerActive) {

@@ -10,10 +10,21 @@ const VerificationPage = () => {
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
-
+  const [emailService, setEmailService] = useState(true); // Set default value to true
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { userInfo } = useAuth(); // Get userInfo from AuthContext
+
+  useEffect(() => {
+    try {
+      const config = yaml.load(fs.readFileSync('config/dev.config.yaml', 'utf8'));
+      setEmailService(config.emailService || false);
+    } catch (error) {
+      console.error("Error loading email service config:", error);
+      setEmailService(false); // Disable the page if there is an error
+    }
+  }, []);
+
 
   useEffect(() => {
     if (!isLoading) {
@@ -24,7 +35,14 @@ const VerificationPage = () => {
       return () => clearTimeout(timer);
     }
   }, [isLoading]);
-
+  useEffect(() => {
+    // If email service is disabled, skip this component
+    if (!emailService) {
+      navigate("/home"); // Redirect to home if email service is off
+      return;
+    }
+  });
+  
   useEffect(() => {
     // If the user is already verified, navigate to the home page
     if (userInfo?.isVerified) {
@@ -39,7 +57,7 @@ const VerificationPage = () => {
       try {
         const response = await axios.post(`${API_URL}/verify-email`, {
           token,
-        });
+        }); 
 
         if (response.status === 200) {
           setIsVerified(true);

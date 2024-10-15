@@ -1,0 +1,6 @@
+app:
+  emailService: true
+  resumeParser: true
+  evaluationByGPT: true
+  logs: true
+  azureService: true
